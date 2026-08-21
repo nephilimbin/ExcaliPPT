@@ -1,0 +1,26 @@
+# 开发配置(原 docker-compose.yml 的内容存档):
+#   挂载源码、禁用健康检查、NODE_ENV=development、stdin_open
+# 用法:docker compose -f docker-compose.dev.yml up --build
+services:
+  excalippt:
+    build:
+      context: .
+      args:
+        - NODE_ENV=development
+    container_name: excalippt
+    ports:
+      - "3100:80"
+    restart: on-failure
+    stdin_open: true
+    healthcheck:
+      disable: true
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./:/opt/node_app/app:delegated
+      - ./package.json:/opt/node_app/package.json
+      - ./yarn.lock:/opt/node_app/yarn.lock
+      - notused:/opt/node_app/app/node_modules
+
+volumes:
+  notused:

@@ -1,0 +1,355 @@
+// 配色 CSS 变量化:dark(黑底白字,默认)与 light(白底黑字,浅色画布上更清晰)两套,
+// --light 类覆盖变量。根背景由 inline style 按 bgOpacity/theme 计算(alpha)。
+.teleprompter {
+  --tp-fg: #f5f5f5;
+  --tp-line-fg: #ffffff;
+  --tp-panel: #1b1b1f;
+  --tp-panel-border: #2a2a30;
+  --tp-btn-bg: #26262c;
+  --tp-btn-border: #3a3a42;
+  --tp-btn-hover: #303038;
+  --tp-muted: #b9b9c0;
+  --tp-gutter-bg: #131316;
+  --tp-gutter-fg: #5b5b63;
+  --tp-line-current-rgb: 51, 51, 57;
+  --tp-scrollbar: #3a3a42;
+  --tp-scrollbar-hover: #4a4a52;
+  --tp-handle: #6b6b73;
+  --tp-tip-bg: #333339;
+  --tp-tip-fg: #ffffff;
+
+  position: fixed;
+  inset: 0;
+  // 画布内形态必须压过 Excalidraw 全部 UI(其 z-index 体系最高 modal=1000/popup=1001);
+  // 无 z-index 时会被画布 canvas 盖住(DOM 在但视觉不可见)。PiP 独立窗口内无层叠竞争,此值无害
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  background: #0f0f10; // fallback;实际由 inline style 按 theme+alpha 覆盖
+  color: var(--tp-fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  user-select: none;
+  container-type: inline-size; // 作 cqi 查询容器:工具栏 gap / 按钮 padding / 留白按容器宽连续缩放
+}
+
+// 浅色主题:白底黑字(设置面板「背景色=白色」时根元素加此类)
+.teleprompter--light {
+  --tp-fg: #1a1a1e;
+  --tp-line-fg: #1a1a1e;
+  --tp-panel: #f2f2f4;
+  --tp-panel-border: #d9d9e0;
+  --tp-btn-bg: #ffffff;
+  --tp-btn-border: #c9c9d0;
+  --tp-btn-hover: #ececf2;
+  --tp-muted: #71717a;
+  --tp-gutter-bg: #fafafc;
+  --tp-gutter-fg: #9a9aa4;
+  --tp-line-current-rgb: 230, 230, 236;
+  --tp-scrollbar: #c9c9d0;
+  --tp-scrollbar-hover: #b6b6c0;
+  --tp-handle: #9a9aa4;
+  --tp-tip-bg: #e6e6ec;
+  --tp-tip-fg: #1a1a1e;
+}
+
+// 画布内浮窗形态:定位/大小由 inline style(x/y/w/h)控制;边框+圆角+阴影成"窗口"感
+.teleprompter--inline {
+  right: auto; // 覆盖 inset:0 的 right/bottom(over-constrained 兜底,显式置 auto 更干净)
+  bottom: auto;
+  border: 1px solid var(--tp-btn-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  // 根节点为收焦点(空格快捷键判定)设了 tabIndex=-1,浏览器默认会给焦点元素
+  // 画 outline(点击后四周黑线)——浮窗已有边框+阴影,这层轮廓线纯多余,去掉
+  outline: none;
+
+  .teleprompter__bottom {
+    cursor: move; // 底栏空白处按住拖动移动浮窗(按钮/进度条上仍是各自 cursor)
+  }
+}
+
+// 四边四角缩放手柄:全部为透明热区(无视觉),同 PiP 原生窗口的八向调整
+.teleprompter__resize {
+  position: absolute;
+  z-index: 3;
+}
+
+.teleprompter__resize--se,
+.teleprompter__resize--sw,
+.teleprompter__resize--ne,
+.teleprompter__resize--nw {
+  width: 16px;
+  height: 16px;
+}
+.teleprompter__resize--se {
+  right: 0;
+  bottom: 0;
+  cursor: nwse-resize;
+}
+.teleprompter__resize--nw {
+  left: 0;
+  top: 0;
+  cursor: nwse-resize;
+}
+.teleprompter__resize--ne {
+  right: 0;
+  top: 0;
+  cursor: nesw-resize;
+}
+.teleprompter__resize--sw {
+  left: 0;
+  bottom: 0;
+  cursor: nesw-resize;
+}
+
+.teleprompter__resize--n {
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 6px;
+  cursor: ns-resize;
+}
+.teleprompter__resize--s {
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 6px;
+  cursor: ns-resize;
+}
+.teleprompter__resize--e {
+  right: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 6px;
+  cursor: ew-resize;
+}
+.teleprompter__resize--w {
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.teleprompter__btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--tp-btn-border);
+  background: var(--tp-btn-bg);
+  color: var(--tp-fg);
+  padding: 4px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap; // 文字永不折行:根除"逐字竖排"把工具栏撑高
+
+  &:hover {
+    background: var(--tp-btn-hover);
+  }
+
+  &[aria-pressed="true"] {
+    background: #3b5bdb;
+    border-color: #3b5bdb;
+  }
+}
+
+// 宽模式仅文字;窄模式(@container)切图标。
+.teleprompter__btn-label {
+  display: inline;
+}
+.teleprompter__btn-icon {
+  display: none;
+}
+.teleprompter__svg {
+  display: block;
+}
+
+// 窄工具栏:文字 → 图标。图标固定小宽、单行高度恒定,工具栏不再被撑高、长名按钮收窄
+@container (max-width: 480px) {
+  .teleprompter__btn {
+    // 左右 padding 随窗口宽连续缩(cqi = 容器宽 1%):窄则按钮收窄、总宽始终包住,不溢出不裁切;
+    // 上下 4px 不变 → 高度恒定。clamp 限 [2px, 6px]:再窄也保留最小内边距
+    padding: 4px clamp(2px, calc(5cqi - 7.3px), 6px);
+  }
+  .teleprompter__btn-label {
+    display: none;
+  }
+  .teleprompter__btn-icon {
+    display: inline-flex;
+  }
+}
+
+// 功能弹出面板:点底栏「设置」齿轮展开,锚定底栏上方(进度条上面);临时弹层,可换行
+.teleprompter__panel {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  right: 4px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  background: var(--tp-panel);
+  border: 1px solid var(--tp-panel-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.teleprompter__readout {
+  font-size: 12px;
+  color: var(--tp-muted);
+  white-space: nowrap;
+}
+
+.teleprompter__readouts {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.teleprompter__editor-wrap {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.teleprompter__gutter {
+  flex-shrink: 0;
+  width: 3.2em;
+  padding: 20px 8px 20px 0;
+  overflow: hidden;
+  text-align: right;
+  line-height: 1.6;
+  color: var(--tp-gutter-fg);
+  background: var(--tp-gutter-bg);
+  border-right: 1px solid var(--tp-panel-border);
+  user-select: none;
+}
+
+// 行号边栏:行高与编辑区一致(20px × 1.6);wrap=off 下逐行对齐
+.teleprompter__gutter-line {
+  line-height: 1.6;
+}
+
+.teleprompter__gutter-line--current {
+  color: #e03131; // 与红色读位线同色,标"当前念到这"(两主题下红均清晰)
+  font-weight: 700;
+}
+
+.teleprompter__editor {
+  flex: 1;
+  min-width: 0;
+  background: transparent; // 透出根背景(theme+alpha)
+  color: var(--tp-fg);
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 20px;
+  line-height: 1.6;
+  font-family: inherit;
+  user-select: text;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--tp-scrollbar) transparent;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--tp-scrollbar);
+    border-radius: 5px;
+
+    &:hover {
+      background: var(--tp-scrollbar-hover);
+    }
+  }
+}
+
+.teleprompter__viewport {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.teleprompter__content {
+  position: relative;
+  // 左右留白按容器(.teleprompter)自身宽度算:cqi 使画布内浮窗与 PiP 行为一致——
+  // vw 会参照所在视口,浮窗模式下主视口很宽导致留白虚大
+  padding: 0 4cqi; // 垂直 padding 由 inline(redY) 设置,使首行从红线开始
+  will-change: transform;
+}
+
+.teleprompter__line {
+  color: var(--tp-line-fg);
+  font-weight: 400;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 3px 8px;
+  transition: background-color 0.12s ease;
+}
+
+// 当前行(红线上方最后一行):灰底 + 加粗;底色 alpha 跟随背景透明度(--tp-current-alpha 由组件挂根上)
+.teleprompter__line--current {
+  background: rgba(var(--tp-line-current-rgb), var(--tp-current-alpha, 1));
+  font-weight: 700;
+}
+
+// 红色读位线:视口中线,作"已读/未读"分界
+.teleprompter__redline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #e03131;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(224, 49, 49, 0.55);
+}
+
+.teleprompter__bottom {
+  position: relative; // 弹出面板(.teleprompter__panel)以底栏为锚定父级
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--tp-panel);
+  border-top: 1px solid var(--tp-panel-border);
+  flex-shrink: 0;
+}
+
+.teleprompter__seek-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.teleprompter__seek {
+  width: 100%;
+  accent-color: var(--tp-handle); // 滑块/填充随主题(原默认蓝太抢眼)
+}
+
+.teleprompter__seek-tip {
+  position: absolute;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  background: var(--tp-tip-bg);
+  color: var(--tp-tip-fg);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+}

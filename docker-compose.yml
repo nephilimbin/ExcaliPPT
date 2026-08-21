@@ -1,0 +1,16 @@
+# 生产部署配置:纯净构建,nginx 托管静态文件,不挂载源码
+# 用法:docker compose up --build -d  →  访问 http://localhost:3100
+#
+# build.context 用项目源码绝对路径:本文件会 cp 到 ~/Documents/Docker/excalidraw/
+# 运行,在那里 `build: .` 会指向空目录拿不到源码,故显式指向仓库源码根
+# (含 Dockerfile + 源码)。换机器需同步更新此路径(见 CLAUDE.md「Docker 部署」)。
+services:
+  excalippt:
+    build:
+      context: /Users/zzb/Documents/Project/WEB/Excalidraw
+      dockerfile: Dockerfile
+    image: excalippt:latest
+    container_name: excalippt
+    ports:
+      - "3100:80"
+    restart: unless-stopped
