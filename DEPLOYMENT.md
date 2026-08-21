@@ -83,7 +83,7 @@ docker compose up --build -d
 为便于与本机其他 docker 服务(funasr、lunatv 等)统一管理,部署运行入口集中在:
 
 ```
-~/Documents/Docker/excalidraw/
+~/Documents/Docker/excalippt/
 ```
 
 该目录存放本仓库根文件的**副本**:
@@ -96,21 +96,21 @@ docker compose up --build -d
 ### 权威源 vs 运行副本
 
 - **权威源 = 仓库根**(git 跟踪):改 compose / 文档都改这里。
-- **运行副本 = `~/Documents/Docker/excalidraw/`**:部署时从这里 `docker compose up`。
+- **运行副本 = `~/Documents/Docker/excalippt/`**:部署时从这里 `docker compose up`。
 
 ### 改了 compose / 文档后,同步到部署目录
 
 ```bash
-cp docker-compose.yml DEPLOYMENT.md ~/Documents/Docker/excalidraw/
+cp docker-compose.yml DEPLOYMENT.md ~/Documents/Docker/excalippt/
 ```
 
 然后在部署目录运行(不必回仓库):
 
 ```bash
-cd ~/Documents/Docker/excalidraw
+cd ~/Documents/Docker/excalippt
 docker compose up --build -d          # 改代码后务必带 --build 重建
 ```
 
 ### 为什么 build.context 写成绝对路径
 
-compose 副本运行在 `~/Documents/Docker/excalidraw/`,若用 `build: .` 会指向该空目录、拿不到源码。故 `docker-compose.yml` 把 `build.context` 显式写成仓库源码绝对路径(`/Users/zzb/Documents/Project/WEB/Excalidraw`),副本在任何位置都能找到源码 + Dockerfile 构建。**换机器需更新此路径**(同时见 `CLAUDE.md`「Docker 部署」)。
+compose 副本运行在 `~/Documents/Docker/excalippt/`,若用 `build: .` 会指向该空目录、拿不到源码。故 `docker-compose.yml` 把 `build.context` 显式写成仓库源码绝对路径(`/Users/zzb/Documents/Project/IMAGE/ExcaliPPT`),副本在任何位置都能找到源码 + Dockerfile 构建。**换机器需更新此路径**(同时见 `CLAUDE.md`「Docker 部署」)。

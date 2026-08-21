@@ -38,5 +38,5 @@ PiP 形态保留(直播跨应用置顶不可替代),同时新增**画布内形�
 - 画布内形态 = **可拖动/可缩放的浮动小窗**(默认 480×320,工具栏空白处按住拖动、右下角手柄缩放,位置/大小持久化 `inlineX/Y/W/H`),`createPortal` 到主文档 `document.body`,背景不透明度可调(`bgTransparency`,0–100 越大越透)。只挡浮窗自身区域,画布其余部分照常操作。初版曾做全屏覆盖,因盖死画布无法操作而废弃。
 - 浮窗需 `z-index: 10000` 压过 Excalidraw 全部 UI(其体系最高 modal=1000/popup=1001);无 z-index 时会被 canvas 盖住——DOM 在但视觉不可见(e2e 教训:可见性必须用 elementFromPoint 命中测试验证,DOM 存在性不算数)。
 - 「切 slide 不受影响」仍成立(见上勘误:fixed 浮层对 focusFrame 免疫),不再依赖独立 browsing context。
-- 代价:画布内形态**不跨应用置顶**(仅在 Excalidraw 窗口内可见);PiP 形态仍保留跨应用置顶。
+- 代价:画布内形态**不跨应用置顶**(仅在 ExcaliPPT 窗口内可见);PiP 形态仍保留跨应用置顶。
 - 透明度实时同步走 props(SlidesPanel 持 state → `<Teleprompter bgOpacity/>`),跨 portal(含跨 document 的 PiP)正常传递。

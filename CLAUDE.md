@@ -2,7 +2,7 @@
 
 ## Project Structure
 
-Excalidraw is a **monorepo** with a clear separation between the core library and the application:
+ExcaliPPT is a **monorepo** (a fork of Excalidraw) with a clear separation between the core library and the application:
 
 - **`packages/excalidraw/`** - Main React component library published to npm as `@excalidraw/excalidraw`
 - **`excalidraw-app/`** - Full-featured web application (excalidraw.com) that uses the library
@@ -48,9 +48,9 @@ yarn fix             # Auto-fix formatting and linting issues
 部署文档与命令详见 `DEPLOYMENT.md`。要点:
 
 - **权威源(本仓库根,git 跟踪)**:`Dockerfile`、`.dockerignore`、`docker-compose.yml`、`docker-compose.dev.yml`、`DEPLOYMENT.md`。
-- **部署运行入口**:`~/Documents/Docker/excalidraw/`(本机其他 docker 服务 funasr、lunatv 亦集中于此)。内含 `docker-compose.yml` + `DEPLOYMENT.md` 的**副本**(从仓库根 cp 而来)。
-- **改 compose / 文档后**:先在仓库根改,再 `cp docker-compose.yml DEPLOYMENT.md ~/Documents/Docker/excalidraw/`,随后在部署目录 `docker compose up --build -d`。
-- **build.context 为本机绝对路径**(`/Users/zzb/Documents/Project/WEB/Excalidraw`),使副本能在部署目录找到源码构建;**换机器需更新此路径**。
+- **部署运行入口**:`~/Documents/Docker/excalippt/`(本机其他 docker 服务 funasr、lunatv 亦集中于此)。内含 `docker-compose.yml` + `DEPLOYMENT.md` 的**副本**(从仓库根 cp 而来)。
+- **改 compose / 文档后**:先在仓库根改,再 `cp docker-compose.yml DEPLOYMENT.md ~/Documents/Docker/excalippt/`,随后在部署目录 `docker compose up --build -d`。
+- **build.context 为本机绝对路径**(`/Users/zzb/Documents/Project/IMAGE/ExcaliPPT`),使副本能在部署目录找到源码构建;**换机器需更新此路径**。
 - **`Dockerfile` / `.dockerignore` 留仓库根**,勿移走——CI(`.github/workflows/*-docker.yml` 的 `docker build .` / `context: .`)依赖它。
 - 端口 `3100:80`(3000 被 Obsidian 占用)。
 
