@@ -12,7 +12,7 @@ import { getShortcutKey } from "../shortcut";
 
 import { useExcalidrawActionManager } from "./App";
 import { Dialog } from "./Dialog";
-import { ExternalLinkIcon, GithubIcon } from "./icons";
+import { GithubIcon } from "./icons";
 
 import "./HelpDialog.scss";
 
@@ -20,6 +20,8 @@ import type { JSX } from "react";
 
 const Header = () => (
   <div className="HelpDialog__header">
+    {/* 文档链接指向上游 docs.excalidraw.com,对本项目不适用,暂时隐藏。
+        恢复时需同时把 ExternalLinkIcon 加回 "./icons" 的导入。
     <a
       className="HelpDialog__btn"
       href="https://docs.excalidraw.com"
@@ -29,6 +31,7 @@ const Header = () => (
       <div className="HelpDialog__link-icon">{ExternalLinkIcon}</div>
       {t("helpDialog.documentation")}
     </a>
+    */}
     <a
       className="HelpDialog__btn"
       href="https://github.com/nephilimbin/ExcaliPPT/issues"
