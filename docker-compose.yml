@@ -4,6 +4,9 @@
 # build.context 用项目源码绝对路径:本文件会 cp 到 ~/Documents/Docker/excalippt/
 # 运行,在那里 `build: .` 会指向空目录拿不到源码,故显式指向仓库源码根
 # (含 Dockerfile + 源码)。换机器需同步更新此路径(见 CLAUDE.md「Docker 部署」)。
+# name 显式固定 compose project 名:project 名默认取目录名,部署目录曾由
+# excalidraw/ 改名 excalippt/,旧容器挂在旧 project 下;显式声明后不再随目录名漂移。
+name: excalippt
 services:
   excalippt:
     build:
