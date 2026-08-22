@@ -41,7 +41,8 @@ export const DEFAULT_SETTINGS: TeleprompterSettings = {
 };
 
 export const DRAFT_KEY = "excalidraw-teleprompter-draft";
-const SETTINGS_KEY = "excalidraw-teleprompter-settings";
+/** 导出供桌面提词器子窗(TeleprompterChild)监听主题跨窗同步(storage 事件按 key 过滤)。 */
+export const SETTINGS_KEY = "excalidraw-teleprompter-settings";
 
 export const loadDraft = (): string => {
   try {

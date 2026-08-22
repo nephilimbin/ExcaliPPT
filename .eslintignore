@@ -9,3 +9,9 @@ packages/excalidraw/types
 examples/**/public
 dev-dist
 coverage
+
+# electron-builder 产物与测试输出(prettier 经此文件忽略)
+desktop/release
+desktop/dist
+test-results
+playwright-report

@@ -5,7 +5,8 @@
   "workspaces": [
     "excalidraw-app",
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "desktop"
   ],
   "devDependencies": {
     "@babel/preset-env": "7.26.9",
@@ -63,6 +64,13 @@
     "build:version": "yarn --cwd ./excalidraw-app build:version",
     "build": "yarn --cwd ./excalidraw-app build",
     "build:preview": "yarn --cwd ./excalidraw-app build:preview",
+    "desktop:typecheck": "yarn --cwd ./desktop typecheck",
+    "desktop:build": "yarn build:app:docker && yarn --cwd ./desktop build",
+    "desktop:start": "yarn desktop:build && yarn --cwd ./desktop start",
+    "desktop:smoke": "yarn desktop:build && yarn --cwd ./desktop smoke",
+    "desktop:dist:mac": "yarn desktop:build && yarn --cwd ./desktop dist:mac",
+    "desktop:dist:win": "yarn desktop:build && yarn --cwd ./desktop dist:win",
+    "desktop:release": "bash ./scripts/release-desktop.sh",
     "start": "yarn --cwd ./excalidraw-app start",
     "start:production": "yarn --cwd ./excalidraw-app start:production",
     "start:example": "yarn build:packages && yarn --cwd ./examples/with-script-in-browser start",

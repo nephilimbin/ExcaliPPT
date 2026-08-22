@@ -68,6 +68,19 @@
   }
 }
 
+// 桌面独立窗(Electron 无边框子窗)形态:底栏空白处拖动 = 移动原生窗口,
+// 与画布内浮窗的拖动手势保持一致(都拖底部);按钮/输入/设置面板豁免 no-drag。
+// 仅由 TeleprompterChild 挂该类,浏览器/web 下不生效。
+.teleprompter__bottom--window-drag {
+  -webkit-app-region: drag;
+
+  button,
+  input,
+  .teleprompter__panel {
+    -webkit-app-region: no-drag;
+  }
+}
+
 // 四边四角缩放手柄:全部为透明热区(无视觉),同 PiP 原生窗口的八向调整
 .teleprompter__resize {
   position: absolute;

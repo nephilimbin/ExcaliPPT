@@ -1,0 +1,75 @@
+{
+  "name": "excalippt-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ExcaliPPT 桌面壳(Electron):加载与 nginx 同一份 SPA 构建产物,离线运行",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "electron .",
+    "smoke": "electron . --smoke",
+    "dist:mac": "electron-builder --mac dmg --arm64 --x64",
+    "dist:win": "electron-builder --win nsis --x64",
+    "dist:all": "electron-builder --mac dmg --win nsis --x64"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "43.4.1",
+    "electron-builder": "^26.15.3",
+    "typescript": "5.9.3"
+  },
+  "build": {
+    "appId": "com.excalippt.desktop",
+    "productName": "ExcaliPPT",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../excalidraw-app/build",
+        "to": "app"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "nephilimbin",
+        "repo": "ExcaliPPT"
+      }
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "identity": null
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true
+    }
+  }
+}

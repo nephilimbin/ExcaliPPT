@@ -32,3 +32,7 @@ meta*.json
 test-results/
 playwright-report/
 .scratch/
+# electron-builder 产物
+desktop/release/
+# 桌面图标资源需要 git 跟踪(根因:全仓 build 模式会忽略 desktop/build)
+!desktop/build/

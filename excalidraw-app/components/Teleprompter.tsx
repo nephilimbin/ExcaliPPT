@@ -211,11 +211,28 @@ const BtnBody = ({ label, icon }: { label: string; icon: ReactNode }) => (
   </>
 );
 
+/** 桌面独立窗的关闭按钮图标。 */
+const CloseIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    width="14"
+    height="14"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+  >
+    <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+);
+
 export const Teleprompter = ({
   bgOpacity = 1,
   variant = "pip",
   theme = "dark",
   onThemeChange,
+  nativeWindowDrag = false,
+  onCloseWindow,
 }: {
   /** 背景不透明度 0–1(1=不透明);画布内模式由父传入,PiP 默认 1(不透明) */
   bgOpacity?: number;
@@ -225,6 +242,13 @@ export const Teleprompter = ({
   theme?: "dark" | "light";
   /** 主题切换回调(面板内单按钮黑⇄白;真源在 SlidesPanel,经此回传) */
   onThemeChange?: (theme: "dark" | "light") => void;
+  /**
+   * 桌面独立窗(Electron 无边框子窗)专用:底部工具栏空白处拖动 = 移动原生窗口,
+   * 与画布内浮窗的拖动手势保持一致;并显示关闭按钮。浏览器内不传(无效果)。
+   */
+  nativeWindowDrag?: boolean;
+  /** 关闭按钮回调(仅 nativeWindowDrag 时显示) */
+  onCloseWindow?: () => void;
 }) => {
   const [text, setText] = useState<string>(loadDraft);
   const [settings, setSettings] = useState<TeleprompterSettings>(loadSettings);
@@ -824,12 +848,24 @@ export const Teleprompter = ({
             />
           </div>
           <div
-            className="teleprompter__bottom"
+            className={`teleprompter__bottom${
+              nativeWindowDrag ? " teleprompter__bottom--window-drag" : ""
+            }`}
             onPointerDown={handleDragStart}
             onPointerMove={handleDragMove}
             onPointerUp={handleDragEnd}
             onPointerCancel={handleDragEnd}
           >
+            {nativeWindowDrag && onCloseWindow && (
+              <button
+                className="teleprompter__btn"
+                title="关闭提词器"
+                aria-label="关闭提词器"
+                onClick={onCloseWindow}
+              >
+                <CloseIcon />
+              </button>
+            )}
             {panel}
             {settingsBtn}
             <div className="teleprompter__readouts">
@@ -868,12 +904,24 @@ export const Teleprompter = ({
             </div>
           </div>
           <div
-            className="teleprompter__bottom"
+            className={`teleprompter__bottom${
+              nativeWindowDrag ? " teleprompter__bottom--window-drag" : ""
+            }`}
             onPointerDown={handleDragStart}
             onPointerMove={handleDragMove}
             onPointerUp={handleDragEnd}
             onPointerCancel={handleDragEnd}
           >
+            {nativeWindowDrag && onCloseWindow && (
+              <button
+                className="teleprompter__btn"
+                title="关闭提词器"
+                aria-label="关闭提词器"
+                onClick={onCloseWindow}
+              >
+                <CloseIcon />
+              </button>
+            )}
             {panel}
             <button
               className="teleprompter__btn"

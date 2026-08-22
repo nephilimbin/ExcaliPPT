@@ -52,11 +52,12 @@ import { softDeleteFrame } from "../slides/slide-delete";
 import { reorderFrames } from "../slides/slide-reorder";
 import { computeFocus, DEFAULT_TOP_PADDING } from "../slides/slide-navigation";
 import {
-  requestTeleprompterPiP,
-  supportsDocumentPiP,
-} from "../teleprompter/teleprompter-pip";
+  selectTeleprompterHost,
+  type TeleprompterWindowHandle,
+} from "../teleprompter/teleprompter-host";
 import {
   loadSettings,
+  SETTINGS_KEY,
   updateSettings,
 } from "../teleprompter/teleprompter-storage";
 
@@ -150,8 +151,10 @@ export const SlidesPanel = () => {
   const [collapsed, setCollapsed] = useState(false);
   /** 是否显示 frame 中心锚点标记(默认关闭)。 */
   const [showAnchor, setShowAnchor] = useState(false);
-  /** 浏览器是否支持 Document Picture-in-Picture(置顶小窗,仅 Chrome/Edge)。 */
-  const [supportsPip] = useState(() => supportsDocumentPiP());
+  /** 提词器独立窗宿主(浏览器 Document PiP / 桌面原生置顶窗);null = 不支持(如 Firefox)。 */
+  const [tpHost] = useState(() => selectTeleprompterHost());
+  /** 独立置顶窗形态(pip)是否可用 = 宿主就绪。 */
+  const supportsPip = tpHost !== null;
   /** 浏览器是否支持录制(MediaRecorder + getUserMedia + canvas.captureStream)。 */
   const [supportsRec] = useState(() => supportsRecording());
   /** 是否正在录制。 */
@@ -220,7 +223,11 @@ export const SlidesPanel = () => {
     },
     [refreshDevices],
   );
-  /** 画中画小窗实例(非 null 时把 <Teleprompter /> portal 进去)。 */
+  /** 打开的提词窗句柄(浏览器宿主 = PiP 窗;桌面宿主 = 原生子窗,portalWindow 为 null)。 */
+  const tpHandleRef = useRef<TeleprompterWindowHandle | null>(null);
+  /** 独立置顶提词窗是否开着(按钮态;桌面宿主无 portal,靠它驱动 UI)。 */
+  const [tpWindowOpen, setTpWindowOpen] = useState(false);
+  /** 画中画小窗实例(非 null 时把 <Teleprompter /> portal 进去;桌面宿主恒 null,子窗自渲染)。 */
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   /** 画布内提词浮层开关(displayMode==="inline" 时 portal 到主文档 body)。 */
   const [inlinePrompterOpen, setInlinePrompterOpen] = useState(false);
@@ -255,33 +262,58 @@ export const SlidesPanel = () => {
     updateSettings({ theme: t });
   };
 
-  /** 点"提词器":按当前形态开/关(pip=画中画,inline=画布内浮层)。 */
+  // 桌面提词器子窗改主题 → 写 settings 存储(storage 事件只在跨窗时触发)→ 回流本组件,
+  // 避免录制分栏的主题指示滞后;web PiP 是 portal(同窗写入不触发 storage),不受影响。
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === SETTINGS_KEY) {
+        setTeleprompterTheme(loadSettings().theme);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  /** 经宿主开独立置顶提词窗并登记句柄;失败 / 被取消返回 null。 */
+  const openTeleprompterWindow =
+    async (): Promise<TeleprompterWindowHandle | null> => {
+      const h = (await tpHost?.open()) ?? null;
+      if (!h) {
+        return null;
+      }
+      tpHandleRef.current = h;
+      h.onClose(() => {
+        // identity 守卫:快速「关旧开新」时旧窗的关闭回调晚到,不得清掉新句柄
+        if (tpHandleRef.current === h) {
+          tpHandleRef.current = null;
+          setTpWindowOpen(false);
+          setPipWindow(null);
+        }
+      });
+      setTpWindowOpen(true);
+      setPipWindow(h.portalWindow);
+      return h;
+    };
+
+  /** 点"提词器":按当前形态开/关(pip=独立置顶窗,inline=画布内浮层)。 */
   const handleTogglePrompter = async () => {
     if (teleprompterDisplayMode === "inline") {
       setInlinePrompterOpen((v) => !v);
       return;
     }
-    if (pipWindow) {
-      pipWindow.close();
-      setPipWindow(null);
-      return;
+    const handle = tpHandleRef.current;
+    if (handle) {
+      handle.close();
+      return; // 关闭回调(pagehide / 子窗 closed)统一清理状态
     }
-    const w = await requestTeleprompterPiP();
-    if (!w) {
-      return;
-    }
-    w.addEventListener("pagehide", () => setPipWindow(null));
-    setPipWindow(w);
+    await openTeleprompterWindow();
   };
 
   /** 形态切换:若提词器正开,自动切到新形态(关旧开新);关着则不动。 */
   useEffect(() => {
-    const wasOpen = pipWindow || inlinePrompterOpen;
+    const wasOpen = tpHandleRef.current || inlinePrompterOpen;
     // 关旧形态
-    if (pipWindow) {
-      pipWindow.close();
-      setPipWindow(null);
-    }
+    tpHandleRef.current?.close();
     setInlinePrompterOpen(false);
     if (!wasOpen) {
       return;
@@ -290,26 +322,23 @@ export const SlidesPanel = () => {
       setInlinePrompterOpen(true);
       return;
     }
-    // 开 PiP:requestWindow 需 user activation——切形态的点击距 effect 执行仅几 ms,
-    // 仍在激活窗口内;万一过期/失败则静默保持关闭,用户手点一次即可。
-    // cancelled:快速来回切换形态时,先发出的 requestWindow 稍后才 resolve——
-    // 不防护会在 inline 形态下打开孤儿 PiP 窗(按钮走 inline 分支,再也关不掉它)
+    // 开独立置顶窗:浏览器 requestWindow 需 user activation——切形态的点击距 effect
+    // 执行仅几 ms,仍在激活窗口内;万一过期/失败则静默保持关闭,用户手点一次即可。
+    // cancelled:快速来回切换形态时,先发出的 open 稍后才 resolve——
+    // 不防护会在 inline 形态下打开孤儿窗(按钮走 inline 分支,再也关不掉它)
     let cancelled = false;
-    requestTeleprompterPiP().then((w) => {
-      if (!w) {
+    openTeleprompterWindow().then((h) => {
+      if (!h) {
         return;
       }
       if (cancelled) {
-        w.close();
-        return;
+        h.close();
       }
-      w.addEventListener("pagehide", () => setPipWindow(null));
-      setPipWindow(w);
     });
     return () => {
       cancelled = true;
     };
-    // 仅在形态变化时跑;pipWindow/inlinePrompterOpen 取闭包当前值
+    // 仅在形态变化时跑;句柄/inlinePrompterOpen 取闭包当前值
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teleprompterDisplayMode]);
 
@@ -1011,7 +1040,7 @@ export const SlidesPanel = () => {
             title={t("labels.teleprompterOpen")}
             icon={PrompterIcon}
             className={
-              pipWindow || inlinePrompterOpen
+              tpWindowOpen || inlinePrompterOpen
                 ? "slides-dock__btn--active"
                 : undefined
             }

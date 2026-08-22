@@ -131,6 +131,7 @@ import DebugCanvas, {
   loadSavedDebugState,
 } from "./components/DebugCanvas";
 import { AIComponents } from "./components/AI";
+import { shouldRenderAIComponents } from "./desktop-bridge";
 
 import "./index.scss";
 
@@ -869,6 +870,8 @@ const ExcalidrawWrapper = () => {
         onExport={onExport}
         initialData={initialStatePromiseRef.current.promise}
         isCollaborating={isCollaborating}
+        // 桌面门禁:隐藏 magic-frame 等 AI 能力入口(包内按 aiEnabled !== false 放行)
+        aiEnabled={shouldRenderAIComponents()}
         onPointerUpdate={collabAPI?.onPointerUpdate}
         UIOptions={{
           canvasActions: {
@@ -927,9 +930,13 @@ const ExcalidrawWrapper = () => {
           <OverwriteConfirmDialog.Actions.SaveToDisk />
         </OverwriteConfirmDialog>
         <AppFooter onChange={() => excalidrawAPI?.refresh()} />
-        {excalidrawAPI && <AIComponents excalidrawAPI={excalidrawAPI} />}
+        {/* 桌面壳隐藏 AI 入口(运行时门禁):同一份产物服务 web 与桌面,不能靠 env 缺省 */}
+        {excalidrawAPI && shouldRenderAIComponents() && (
+          <AIComponents excalidrawAPI={excalidrawAPI} />
+        )}
 
-        <TTDDialogTrigger />
+        {/* text-to-diagram 亦属 AI 入口,随桌面门禁隐藏 */}
+        {shouldRenderAIComponents() && <TTDDialogTrigger />}
         {isCollaborating && isOffline && (
           <div className="alertalert--warning">
             {t("alerts.collabOfflineWarning")}
