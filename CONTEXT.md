@@ -16,7 +16,7 @@ ExcaliPPT(基于 Excalidraw)的核心增量:「批量创建预设尺寸的 Frame
 
 **Canvas Slide Config（画布幻灯片配置）**：单个 Canvas 内的配置，**覆盖** Default。新画布初始化 = Default；在该画布内改配置（不「保存为默认」）则写此处。 _Avoid_: 默认配置
 
-**Teleprompter（口播提词器）**：Document Picture-in-Picture 始终置顶小窗形态（仅 Chrome/Edge 116+）的提词器，大字号自动滚屏的口播文稿；由 SlidesPanel 按钮触发。与 Slide 数据**正交**——不进场景 / frame / 导出，仅存 localStorage。切 slide 的画布动画（focusFrame）波及不到它（独立 browsing context）。 _Avoid_: 字幕板（歧义，易与「画面字幕」混）、备注栏、caption。
+**Teleprompter（口播提词器）**：独立置顶小窗形态的提词器，大字号自动滚屏的口播文稿；窗口机制随宿主环境：**浏览器 = Document PiP（仅 Chrome/Edge 116+），桌面版 = 原生置顶窗口**（Electron 不暴露 Document PiP，由主进程开 alwaysOnTop 窗口，行为等价）；由 SlidesPanel 按钮触发。与 Slide 数据**正交**——不进场景 / frame / 导出，仅存 localStorage。切 slide 的画布动画（focusFrame）波及不到它（独立窗口/browsing context）。 _Avoid_: 字幕板（歧义，易与「画面字幕」混）、备注栏、caption。
 
 **Recording（录制）**：把「当前 slide」按其目标分辨率实时合成（slide 内容 + 可选摄像头 / 麦克风 / 录制指针）编码成视频文件的旁路功能。采集源 = **离屏原生分辨率渲染**（每帧 exportToCanvas 重绘当前 frame，非屏幕采样），见 [ADR-0004](./docs/adr/0004-recording-native-render.md)。与 Slide 数据**正交**——不进场景 / frame / 导出，设置存 localStorage。 _Avoid_: 录屏（歧义，易混 getDisplayMedia 整屏抓取——本功能**禁止**整屏抓取，会把 PiP 提词器录进去）、capture。
 
@@ -39,7 +39,7 @@ ExcaliPPT(基于 Excalidraw)的核心增量:「批量创建预设尺寸的 Frame
 - 配置两层：**Default Slide Config**（全局）← 被 **Canvas Slide Config**（画布级）覆盖；新画布继承 Default
 - Frame 内容尺寸 ≠ 屏幕尺寸：**屏幕显示 = Frame 尺寸 × zoom**（zoom 只适配屏幕，不改内容）
 - **Teleprompter** 与 **Slide** 正交：旁路工具，不引入 slide 元数据、不动 `Slide ≡ Frame`；由 SlidesPanel 按钮触发独立窗口，画布动画波及不到
-- **Recording** 与 **Slide** 正交：旁路工具，不改 `Slide ≡ Frame`、不进 scene；录制区域 = 当前聚焦 slide 的 frame 内容（目标分辨率），随 slide 切换而切换。**提词器**（独立 PiP browsing context）与 **Recording** 互不影响——只要采集源是 canvas 派生，PiP 永不出现在画面里
+- **Recording** 与 **Slide** 正交：旁路工具，不改 `Slide ≡ Frame`、不进 scene；录制区域 = 当前聚焦 slide 的 frame 内容（目标分辨率），随 slide 切换而切换。**提词器**（独立置顶窗口，宿主环境决定机制）与 **Recording** 互不影响——只要采集源是 canvas 派生，提词器窗口永不出现在画面里
 - **画布管理**：主菜单「画布管理…」对话框列举所有 Canvas（Default + Scratch），支持 打开 / 重命名 / 删除；删除清 `excalidraw:<id>` + `excalidraw-state:<id>` + IndexedDB `files-db:<id>` + 注册表项。**无自动淘汰**（v1 仅手动删），**不做「关闭即删」**（数据丢失风险——见 [ADR-0003](./docs/adr/0003-canvas-management.md)）
 
 ## Example dialogue
