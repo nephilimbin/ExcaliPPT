@@ -1,0 +1,10 @@
+{
+  "_meta": {
+    "name": "ExcaliPPT 应用图标(定稿 2026-08-22)",
+    "file": "desktop/build/icon.png(白底 1024,应用图标)/ public/excalippt-icon.png(抠除白底的透明版,首页 logo)",
+    "model": "gpt-5.5(gpt-image 技能 generate,图生图)",
+    "reference": "同目录无 —— 本版以 gen-20260822-010500(紫底白笔剑)为参考图重配色而成",
+    "note": "想再生成/微调时,把 fullPrompt 喂回 gpt-image.mjs generate --json;透明版用 magick 四角 floodfill 抠白底(-fuzz 6%)"
+  },
+  "fullPrompt": "Recolor of the reference image, keep the exact same composition, shapes, angles and hand-drawn style. Minimal macOS app icon for ExcaliPPT: a marker pen whose silhouette doubles as a legendary sword (long pen body as blade, cap band as crossguard, nib sharpened as sword tip), drawn diagonally with one thick rounded swoosh stroke trailing from its tip. New color combination: solid pure white background (no gradient, no vignette); the pen-sword body drawn in deep violet-purple #6965DB with thick rounded hand-drawn Excalidraw-style strokes; the swoosh stroke from the nib in coral-red; keep tiny highlight details minimal. Only the pen-sword and one stroke, generous negative space, no text, no letters, no shadows, flat logo-grade vector illustration, thick confident strokes readable at 16 pixels, centered with generous margins, matte finish, 1024x1024, 1:1."
+}
