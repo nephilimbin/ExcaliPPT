@@ -55,6 +55,7 @@
           ]
         }
       ],
+      "artifactName": "ExcaliPPT_${version}_macOS_${arch}.dmg",
       "category": "public.app-category.productivity",
       "identity": null
     },
@@ -66,7 +67,8 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "artifactName": "ExcaliPPT_${version}_Windows_${arch}.exe"
     },
     "nsis": {
       "oneClick": true
