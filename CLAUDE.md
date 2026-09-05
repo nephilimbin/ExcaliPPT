@@ -7,6 +7,7 @@ ExcaliPPT is a **monorepo** (a fork of Excalidraw) with a clear separation betwe
 - **`packages/excalidraw/`** - Main React component library published to npm as `@excalidraw/excalidraw`
 - **`excalidraw-app/`** - Full-featured web application (excalidraw.com) that uses the library
 - **`packages/`** - Core packages: `@excalidraw/common`, `@excalidraw/element`, `@excalidraw/math`, `@excalidraw/utils`
+- **`desktop/`** - Electron 桌面壳(离线运行、原生置顶提词器、GitHub Releases 更新)
 - **`examples/`** - Integration examples (NextJS, browser script)
 
 ## Development Workflow
@@ -45,18 +46,12 @@ yarn fix             # Auto-fix formatting and linting issues
 
 ## Docker 部署
 
-部署文档与命令详见 `DEPLOYMENT.md`。要点:
+详见 **[DEPLOYMENT.md](./DEPLOYMENT.md)**(权威源说明、双 compose、本机部署目录与同步命令、2026-08-14 事故教训)。三条安全要点:
 
-- **权威源(本仓库根,git 跟踪)**:`Dockerfile`、`.dockerignore`、`docker-compose.yml`、`docker-compose.dev.yml`、`DEPLOYMENT.md`。
-- **部署运行入口**:`~/Documents/Docker/excalippt/`(本机其他 docker 服务 funasr、lunatv 亦集中于此)。内含 `docker-compose.yml` + `DEPLOYMENT.md` 的**副本**(从仓库根 cp 而来)。
-- **改 compose / 文档后**:先在仓库根改,再 `cp docker-compose.yml DEPLOYMENT.md ~/Documents/Docker/excalippt/`,随后在部署目录 `docker compose up --build -d`。
-- **build.context 为本机绝对路径**(`/Users/zzb/Documents/Project/IMAGE/ExcaliPPT`),使副本能在部署目录找到源码构建;**换机器需更新此路径**。
-- **`Dockerfile` / `.dockerignore` 留仓库根**,勿移走——CI(`.github/workflows/*-docker.yml` 的 `docker build .` / `context: .`)依赖它。
-- 端口 `3100:80`(3000 被 Obsidian 占用)。
+- 端口 `3100:80`(3000 被 Obsidian 占用;与 dev/e2e 的 3001 互不冲突)
+- **构建约 15 分钟**(BuildKit 实测 14~18 分钟):自动化部署一律**拆两步**——`docker compose build` 成功后再 `docker compose up -d`(秒级替换,无中断窗口)
+- **不要中途杀 compose 构建**:构建未完成时杀掉 → 新镜像没产出、旧容器已停 → 3100 永久中断,只能完整重建
 
-## Docker 部署注意事项(2026-08-14 事故教训)
+## 桌面版(Electron)
 
-- **构建耗时约 15 分钟**(容器内 yarn install + 生产构建;BuildKit 历史实测 14~18 分钟)。远超 Claude 工具 10 分钟前台超时——自动化部署一律**拆两步**:`docker compose build` 成功后再 `docker compose up -d`(后者秒级原子替换,无中断窗口)。
-- **不要中途杀 compose**:`up --build -d` 会在构建未完成时先停旧容器(经 Docker Desktop 进程执行,日志表现为 GUI 通道的 `ContainerStopComposeLinux`);此时杀掉 compose(超时清理 / pkill)→ 新镜像没产出、旧容器已停 → 3100 永久中断,只能重新完整构建。
-- **`up -d` 不带 `--build` 不重建镜像**:镜像未更新时它无事可做(只显示 Running)。部署后用 `docker image inspect <image> --format '{{.Created}}'` 核对镜像日期,确认跑的是新代码。
-- 排查依据:`docker buildx history ls` 可查每次构建的时长/状态/取消记录(定位"构建是否真的跑过/被谁中断");`docker inspect` 时间戳为 UTC,`buildx history` 为本地时区,对照时先换算。
+打包 / 发布 / 更新机制见 [desktop/README.md](./desktop/README.md),买家安装说明见 [desktop/INSTALL.md](./desktop/INSTALL.md)。产物命名统一 `ExcaliPPT_<版本>_<系统>_<架构>`,构建入口 `yarn desktop:dist:mac` / `yarn desktop:dist:win`。

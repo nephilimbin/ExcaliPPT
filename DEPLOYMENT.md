@@ -17,7 +17,7 @@ docker compose up --build -d
 
 完成后访问:**http://localhost:3100**
 
-- 首次构建约几分钟(拉取 `node:24`、`nginx` 基础镜像 + `yarn install` + `vite build`),之后有缓存会很快。
+- 首次构建约 15 分钟(容器内 `yarn install` + 生产构建,BuildKit 实测 14~18 分钟),之后有缓存会很快。
 - 容器默认健康检查启用(基于 Dockerfile 的 `HEALTHCHECK`),`docker compose ps` 可见 `healthy`。
 
 ## 二、端口说明
@@ -69,8 +69,11 @@ docker run -d -p 3100:80 --name excalippt excalippt-app
 镜像在构建时 `COPY . .` 把源码打包。**修改代码后必须带 `--build` 重新构建**,否则会复用旧镜像:
 
 ```bash
-docker compose up --build -d
+docker compose build       # 先构建(约 15 分钟,中断可安全重试)
+docker compose up -d       # 构建成功后再启动(秒级原子替换,无中断窗口)
 ```
+
+> `docker compose up --build -d` 一条命令也可,但它会在构建未完成时**先停旧容器**——若中途被杀(超时清理 / pkill),新镜像没产出、旧容器已停 → 服务中断,只能完整重建。**自动化部署一律拆两步**(事故教训详见第十节)。
 
 ## 八、注意事项
 
@@ -108,9 +111,16 @@ cp docker-compose.yml DEPLOYMENT.md ~/Documents/Docker/excalippt/
 
 ```bash
 cd ~/Documents/Docker/excalippt
-docker compose up --build -d          # 改代码后务必带 --build 重建
+docker compose build && docker compose up -d   # 先构建成功,再秒级替换(见第七节)
 ```
 
 ### 为什么 build.context 写成绝对路径
 
-compose 副本运行在 `~/Documents/Docker/excalippt/`,若用 `build: .` 会指向该空目录、拿不到源码。故 `docker-compose.yml` 把 `build.context` 显式写成仓库源码绝对路径(`/Users/zzb/Documents/Project/IMAGE/ExcaliPPT`),副本在任何位置都能找到源码 + Dockerfile 构建。**换机器需更新此路径**(同时见 `CLAUDE.md`「Docker 部署」)。
+compose 副本运行在 `~/Documents/Docker/excalippt/`,若用 `build: .` 会指向该空目录、拿不到源码。故 `docker-compose.yml` 把 `build.context` 显式写成仓库源码绝对路径(`/Users/zzb/Documents/Project/IMAGE/ExcaliPPT`),副本在任何位置都能找到源码 + Dockerfile 构建。**换机器需更新此路径**。
+
+## 十、部署事故教训(2026-08-14)
+
+- **构建耗时约 15 分钟**(容器内 `yarn install` + 生产构建;BuildKit 历史实测 14~18 分钟)。远超 Claude 工具 10 分钟前台超时——自动化部署一律**拆两步**:`docker compose build` 成功后再 `docker compose up -d`(后者秒级原子替换,无中断窗口)。
+- **不要中途杀 compose**:`up --build -d` 会在构建未完成时先停旧容器(经 Docker Desktop 进程执行,日志表现为 GUI 通道的 `ContainerStopComposeLinux`);此时杀掉 compose(超时清理 / pkill)→ 新镜像没产出、旧容器已停 → 3100 永久中断,只能重新完整构建。
+- **`up -d` 不带 `--build` 不重建镜像**:镜像未更新时它无事可做(只显示 Running)。部署后用 `docker image inspect <image> --format '{{.Created}}'` 核对镜像日期,确认跑的是新代码。
+- 排查依据:`docker buildx history ls` 可查每次构建的时长/状态/取消记录(定位"构建是否真的跑过/被谁中断");`docker inspect` 时间戳为 UTC,`buildx history` 为本地时区,对照时先换算。
