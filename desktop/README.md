@@ -18,7 +18,7 @@ yarn desktop:release    # 双平台构建 → tag → GitHub Releases 草稿
 
 ## 未签名首启(已接受的摩擦,不购买证书)
 
-- **macOS**:双击 dmg 安装后首次打开被 Gatekeeper 拦 → **右键 App → 打开 → 再点「打开」**;或终端 `xattr -cr /Applications/ExcaliPPT.app`
+- **macOS**:双击 dmg 安装后首次打开被 Gatekeeper 拦 → **系统设置 → 隐私与安全性 →「仍要打开」**(macOS 15+;更旧系统可右键 App →「打开」);或终端 `xattr -cr /Applications/ExcaliPPT.app`
 - **Windows**:SmartScreen 拦 → 「更多信息」→ 「仍要运行」
 
 ## 更新
