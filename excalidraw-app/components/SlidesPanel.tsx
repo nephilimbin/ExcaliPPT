@@ -968,14 +968,15 @@ export const SlidesPanel = () => {
     return (
       <div className="slides-dock slides-dock--collapsed">
         <Island padding={0}>
-          <IconButton
-            type="icon"
-            size="small"
-            aria-label={t("labels.slidesExpand")}
-            title={t("labels.slidesExpand")}
-            icon={sidebarRightIcon}
-            onClick={() => setCollapsed(false)}
-          />
+          <Tooltip label={t("labels.slidesExpand")}>
+            <IconButton
+              type="icon"
+              size="small"
+              aria-label={t("labels.slidesExpand")}
+              icon={sidebarRightIcon}
+              onClick={() => setCollapsed(false)}
+            />
+          </Tooltip>
         </Island>
         {pipWindow &&
           createPortal(
@@ -1004,52 +1005,58 @@ export const SlidesPanel = () => {
       <Island padding={2}>
         <div className="slides-dock__header">{t("labels.slidesTitle")}</div>
         <div className="slides-dock__top">
-          <IconButton
-            type="icon"
-            aria-label={t("labels.slidesCollapse")}
-            title={t("labels.slidesCollapse")}
-            icon={chevronRight}
-            disabled={isRecording}
-            onClick={() => setCollapsed(true)}
-          />
-          <IconButton
-            type="icon"
-            aria-label={
+          <Tooltip label={t("labels.slidesCollapse")}>
+            <IconButton
+              type="icon"
+              aria-label={t("labels.slidesCollapse")}
+              icon={chevronRight}
+              disabled={isRecording}
+              onClick={() => setCollapsed(true)}
+            />
+          </Tooltip>
+          <Tooltip
+            label={
               showAnchor
                 ? t("labels.slidesHideAnchor")
                 : t("labels.slidesShowAnchor")
             }
-            title={
-              showAnchor
-                ? t("labels.slidesHideAnchor")
-                : t("labels.slidesShowAnchor")
-            }
-            icon={TargetIcon}
-            className={showAnchor ? "slides-dock__btn--active" : undefined}
-            onClick={() => setShowAnchor((v) => !v)}
-          />
-          <IconButton
-            ref={settingsBtnRef}
-            type="icon"
-            aria-label={t("labels.slidesSettings")}
-            title={t("labels.slidesSettings")}
-            icon={settingsIcon}
-            className={showSettings ? "slides-dock__btn--active" : undefined}
-            onClick={() => setShowSettings((v) => !v)}
-          />
-          <IconButton
-            type="icon"
-            aria-label={t("labels.teleprompterOpen")}
-            title={t("labels.teleprompterOpen")}
-            icon={PrompterIcon}
-            className={
-              tpWindowOpen || inlinePrompterOpen
-                ? "slides-dock__btn--active"
-                : undefined
-            }
-            disabled={teleprompterDisplayMode === "pip" && !supportsPip}
-            onClick={handleTogglePrompter}
-          />
+          >
+            <IconButton
+              type="icon"
+              aria-label={
+                showAnchor
+                  ? t("labels.slidesHideAnchor")
+                  : t("labels.slidesShowAnchor")
+              }
+              icon={TargetIcon}
+              className={showAnchor ? "slides-dock__btn--active" : undefined}
+              onClick={() => setShowAnchor((v) => !v)}
+            />
+          </Tooltip>
+          <Tooltip label={t("labels.slidesSettings")}>
+            <IconButton
+              ref={settingsBtnRef}
+              type="icon"
+              aria-label={t("labels.slidesSettings")}
+              icon={settingsIcon}
+              className={showSettings ? "slides-dock__btn--active" : undefined}
+              onClick={() => setShowSettings((v) => !v)}
+            />
+          </Tooltip>
+          <Tooltip label={t("labels.teleprompterOpen")}>
+            <IconButton
+              type="icon"
+              aria-label={t("labels.teleprompterOpen")}
+              icon={PrompterIcon}
+              className={
+                tpWindowOpen || inlinePrompterOpen
+                  ? "slides-dock__btn--active"
+                  : undefined
+              }
+              disabled={teleprompterDisplayMode === "pip" && !supportsPip}
+              onClick={handleTogglePrompter}
+            />
+          </Tooltip>
           {isRecording ? (
             <button
               type="button"
@@ -1079,14 +1086,15 @@ export const SlidesPanel = () => {
               />
             </Tooltip>
           )}
-          <IconButton
-            type="icon"
-            aria-label={t("labels.slidesAdd")}
-            title={t("labels.slidesAdd")}
-            icon={PlusIcon}
-            onClick={handleCreate}
-            disabled={!excalidrawAPI || width < 1 || height < 1}
-          />
+          <Tooltip label={t("labels.slidesAdd")}>
+            <IconButton
+              type="icon"
+              aria-label={t("labels.slidesAdd")}
+              icon={PlusIcon}
+              onClick={handleCreate}
+              disabled={!excalidrawAPI || width < 1 || height < 1}
+            />
+          </Tooltip>
         </div>
 
         {showSettings && (
