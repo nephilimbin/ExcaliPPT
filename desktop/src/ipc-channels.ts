@@ -7,4 +7,6 @@ export const IPC = {
   teleprompterClose: "excalippt:teleprompter:close",
   /** 主 → 渲染:提词器子窗已关闭(用户点叉 / 主进程清理)。 */
   teleprompterClosed: "excalippt:teleprompter:closed",
+  /** 渲染 → 主:send,手动触发检查更新(Win 自动下载安装;mac 弹下载链接)。 */
+  checkForUpdates: "excalippt:updates:check",
 } as const;

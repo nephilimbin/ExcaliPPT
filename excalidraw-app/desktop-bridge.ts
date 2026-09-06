@@ -10,6 +10,8 @@
 export interface ExcalipptDesktopBridge {
   /** 运行平台("darwin" | "win32" | …)。 */
   readonly platform: string;
+  /** 手动触发「检查更新」:Win 自动下载安装;mac 弹下载链接(半自动,未签名限制)。 */
+  checkForUpdates(): void;
   /** 提词器原生置顶窗:由主进程开 alwaysOnTop 子窗(子窗自渲染,不走 portal)。 */
   readonly teleprompter: {
     /** 打开置顶提词窗(主进程携带主窗当前 query,子窗读到同一画布文稿)。失败返回 false。 */

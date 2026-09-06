@@ -130,6 +130,8 @@ const wireWindowOpenHandling = (win: BrowserWindow): void => {
       return {
         action: "allow",
         overrideBrowserWindowOptions: {
+          // 与主窗一致:Windows 隐藏嵌入式菜单栏(见 createMainWindow)
+          autoHideMenuBar: process.platform === "win32",
           webPreferences: baseWebPreferences(),
         },
       };
@@ -261,6 +263,9 @@ const createMainWindow = (): BrowserWindow => {
       : {}),
     show: false,
     title: "ExcaliPPT",
+    // Windows 的应用菜单栏嵌在窗口顶部挤占画布 → 自动隐藏(Alt 唤出,快捷键不受影响);
+    // macOS 菜单栏在系统屏幕顶部,无此问题
+    autoHideMenuBar: process.platform === "win32",
     webPreferences: baseWebPreferences(),
   });
   wireWindowOpenHandling(win);
@@ -436,6 +441,8 @@ const openTeleprompter = async (senderWin: BrowserWindow): Promise<boolean> => {
 };
 
 const wireIpc = (): void => {
+  // 画布主菜单「检查更新」入口(Windows 菜单栏隐藏后 UI 内可达)
+  ipcMain.on(IPC.checkForUpdates, () => checkForUpdatesManually());
   ipcMain.handle(IPC.teleprompterOpen, (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win) {

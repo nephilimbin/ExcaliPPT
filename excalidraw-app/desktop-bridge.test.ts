@@ -12,6 +12,7 @@ import {
 
 const fakeBridge: ExcalipptDesktopBridge = {
   platform: "darwin",
+  checkForUpdates: () => {},
   teleprompter: {
     open: () => Promise.resolve(true),
     close: () => {},

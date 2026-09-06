@@ -8,6 +8,7 @@ import type { Theme } from "@excalidraw/element/types";
 
 import { LanguageList } from "../app-language/LanguageList";
 import { generateCanvasId } from "../app_constants";
+import { getDesktopBridge, isDesktopApp } from "../desktop-bridge";
 
 import { CanvasManageDialog } from "./CanvasManageDialog";
 import { saveDebugState } from "./DebugCanvas";
@@ -32,6 +33,19 @@ const manageCanvasIcon = (
       stroke="currentColor"
       strokeWidth="1.6"
       strokeLinecap="round"
+    />
+  </svg>
+);
+
+// 「检查更新」菜单项图标(循环箭头语义,icons.tsx 无现成图标,内联)
+const checkUpdateIcon = (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <path
+      d="M16 10a6 6 0 1 1-1.76-4.24M16 2.5V6h-3.5"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );
@@ -87,6 +101,15 @@ export const AppMainMenu: React.FC<{
         >
           GitHub
         </MainMenu.ItemLink>
+        {isDesktopApp() && (
+          <MainMenu.Item
+            icon={checkUpdateIcon}
+            onSelect={() => getDesktopBridge()?.checkForUpdates()}
+            data-testid="check-updates-button"
+          >
+            检查更新…
+          </MainMenu.Item>
+        )}
         {isDevEnv() && (
           <MainMenu.Item
             icon={eyeIcon}

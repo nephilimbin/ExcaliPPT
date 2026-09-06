@@ -9,6 +9,10 @@ import { IPC } from "./ipc-channels";
 
 const bridge = {
   platform: process.platform,
+  /** 手动触发检查更新(主进程弹窗:Win 自动下载安装,mac 给下载链接)。 */
+  checkForUpdates: (): void => {
+    ipcRenderer.send(IPC.checkForUpdates);
+  },
   teleprompter: {
     open: (): Promise<boolean> => ipcRenderer.invoke(IPC.teleprompterOpen),
     close: (): void => {
