@@ -15,6 +15,10 @@ VERSION="$(node -p "require('./desktop/package.json').version")"
 TAG="v${VERSION}"
 echo "==> 发布 ${TAG}"
 
+# 清掉上轮发版的旧产物:electron-builder 不清理输出目录,
+# 且下方上传用不带版本的 glob,旧版本 dmg/exe 会混进新 tag 的 Release
+rm -rf desktop/release
+
 yarn desktop:build
 yarn --cwd ./desktop dist:mac
 yarn --cwd ./desktop dist:win
