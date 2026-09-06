@@ -1,6 +1,6 @@
 # ExcaliPPT 安装说明
 
-> 适用版本:0.1.0。安装后**完全离线可用**;联网时可获得新版本提示。
+> 适用版本:0.1.1。安装后**完全离线可用**;联网时可获得新版本提示。
 
 ## 一、系统要求与选择安装包
 
@@ -10,20 +10,17 @@
 - macOS:12 (Monterey) 及更高版本
 
 | 安装包文件 | 适用系统 |
-|---|---|
-| `ExcaliPPT_0.1.0_Windows_x64.exe` | Windows 10 / 11(64 位) |
-| `ExcaliPPT_0.1.0_macOS_arm64.dmg` | macOS 12 (Monterey) 及以上,**Apple Silicon(M1/M2/M3/M4)** |
-| `ExcaliPPT_0.1.0_macOS_x64.dmg` | macOS 12 (Monterey) 及以上,**Intel 芯片** |
+| --- | --- |
+| `ExcaliPPT_0.1.1_Windows_x64.exe` | Windows 10 / 11(64 位) |
+| `ExcaliPPT_0.1.1_macOS_arm64.dmg` | macOS 12 (Monterey) 及以上,**Apple Silicon(M1/M2/M3/M4)** |
+| `ExcaliPPT_0.1.1_macOS_x64.dmg` | macOS 12 (Monterey) 及以上,**Intel 芯片** |
 
-> 不确定 Mac 是哪种芯片:点按左上角  →「关于本机」——
-> 显示「芯片:Apple M…」→ 选 **arm64**;显示「处理器:Intel…」→ 选 **x64**。
+> 不确定 Mac 是哪种芯片:点按左上角 →「关于本机」—— 显示「芯片:Apple M…」→ 选 **arm64**;显示「处理器:Intel…」→ 选 **x64**。
 
 ## 二、Windows 安装
 
 1. 下载 `.exe` 安装包,双击运行
-2. 首次运行可能出现蓝色提示「Windows 已保护你的电脑」(SmartScreen):
-   点 **「更多信息」→「仍要运行」**
-   ——应用未购买商业签名证书,属正常现象,仅首次出现
+2. 首次运行可能出现蓝色提示「Windows 已保护你的电脑」(SmartScreen): 点 **「更多信息」→「仍要运行」** ——应用未购买商业签名证书,属正常现象,仅首次出现
 3. 安装为全自动(默认装入个人目录,无需选择路径),完成后自动启动
 
 ## 三、macOS 安装
@@ -54,7 +51,7 @@
 ## 六、常见问题
 
 | 现象 | 处理 |
-|---|---|
+| --- | --- |
 | macOS 打不开或闪退 | 大概率架构选错:M 系列芯片请用 `arm64` 包,Intel 请用 `x64` 包 |
 | Windows 蓝色安全提示 | 「更多信息」→「仍要运行」(仅首次) |
 | 「检查更新失败」 | 检查网络连接;或当前尚无新版本发布 |
