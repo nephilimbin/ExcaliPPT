@@ -9,6 +9,7 @@
 // 开发:EXCALIPPT_DEV_SERVER_URL=http://localhost:3001 可指向 vite dev server。
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import {
@@ -528,11 +529,54 @@ const broadcastUpdateStatus = (status: UpdateStatus): void => {
 };
 // 注:通用的 broadcastToAllWindows 定义在提词器广播区,供两处共用。
 
+/**
+ * 清理已安装版本的更新缓存(对齐 Chrome/VS Code「装完即清」):
+ * electron-updater 默认把安装包滞留到下一版下载时才回收(换来同版本免重复下载);
+ * 新版首次启动时,pending 里的缓存版本 ≤ 当前运行版本 = 已装完的残留 → 清空整个缓存目录。
+ * 「稍后」未安装 / 崩溃重启场景(缓存版本 > 当前)不清,校验复用机制不受影响。
+ * 全程同步:须在启动期后台 checkForUpdates 复用缓存之前完成,避免边读边删。
+ */
+const cleanupInstalledUpdateCache = (): void => {
+  try {
+    // 缓存目录名由 electron-builder 写入 app-update.yml(与 electron-updater 运行时同源,
+    // 不硬编码);未打包态无此文件 → 自然跳过
+    const config = fs.readFileSync(
+      path.join(process.resourcesPath, "app-update.yml"),
+      "utf-8",
+    );
+    const dirName = /^updaterCacheDirName:\s*(\S+)$/m.exec(config)?.[1];
+    if (!dirName) {
+      return;
+    }
+    // 缓存根路径与 electron-updater 的 getAppCacheDir 同源(Windows: %LOCALAPPDATA%)
+    const cacheRoot =
+      process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
+    const cacheDir = path.join(cacheRoot, dirName);
+    const info = JSON.parse(
+      fs.readFileSync(
+        path.join(cacheDir, "pending", "update-info.json"),
+        "utf-8",
+      ),
+    ) as { fileName?: string };
+    const cachedVersion = /^ExcaliPPT_(\d+\.\d+\.\d+)_/.exec(
+      info.fileName ?? "",
+    )?.[1];
+    // 版本解析失败(命名格式变更)保守不清;缓存版本更新(未装完)也不清
+    if (!cachedVersion || isRemoteNewer(cachedVersion, app.getVersion())) {
+      return;
+    }
+    fs.rmSync(cacheDir, { recursive: true, force: true });
+  } catch {
+    // 缓存不存在 / 读取失败:无事可清,静默
+  }
+};
+
 const setupAutoUpdater = (): void => {
   if (!app.isPackaged) {
     // 未打包时 electron-updater 全部跳过,周期检查纯属日志噪音
     return;
   }
+  cleanupInstalledUpdateCache();
   // macOS 全自动更新需要签名(Squirrel.Mac 校验),本应用不签名 → Mac 不自动下载
   autoUpdater.autoDownload = process.platform === "win32";
   autoUpdater.autoInstallOnAppQuit = true;
