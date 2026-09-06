@@ -1,6 +1,6 @@
 {
   "name": "excalippt-desktop",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "ExcaliPPT 桌面壳(Electron):加载与 nginx 同一份 SPA 构建产物,离线运行",
   "main": "dist/main.js",
