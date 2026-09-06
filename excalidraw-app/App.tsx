@@ -131,11 +131,12 @@ import DebugCanvas, {
   loadSavedDebugState,
 } from "./components/DebugCanvas";
 import { AIComponents } from "./components/AI";
-import { shouldRenderAIComponents } from "./desktop-bridge";
+import { isDesktopApp, shouldRenderAIComponents } from "./desktop-bridge";
 
 import "./index.scss";
 
 import { SlidesPanel } from "./components/SlidesPanel";
+import { DesktopUpdateNotifier } from "./components/DesktopUpdateNotifier";
 
 import type { CollabAPI } from "./collab/Collab";
 
@@ -976,6 +977,9 @@ const ExcalidrawWrapper = () => {
         />
 
         <SlidesPanel />
+
+        {/* 桌面更新通知卡(Win):前台显示下载进度/重启安装入口;web 下不渲染 */}
+        {isDesktopApp() && <DesktopUpdateNotifier />}
 
         {errorMessage && (
           <ErrorDialog onClose={() => setErrorMessage("")}>

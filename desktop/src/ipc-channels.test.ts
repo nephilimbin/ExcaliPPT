@@ -17,4 +17,11 @@ describe("IPC channel contract", () => {
     expect(IPC.teleprompterClose).toContain("teleprompter");
     expect(IPC.teleprompterClosed).toContain("teleprompter");
   });
+
+  it("契约字段齐全(check / status / install / get 四通道)", () => {
+    expect(IPC.checkForUpdates).toContain("updates");
+    expect(IPC.updateStatus).toContain("updates");
+    expect(IPC.installUpdate).toContain("updates");
+    expect(IPC.getUpdateStatus).toContain("updates");
+  });
 });

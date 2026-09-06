@@ -104,7 +104,7 @@ export const AppMainMenu: React.FC<{
         {isDesktopApp() && (
           <MainMenu.Item
             icon={checkUpdateIcon}
-            onSelect={() => getDesktopBridge()?.checkForUpdates()}
+            onSelect={() => getDesktopBridge()?.updates.check()}
             data-testid="check-updates-button"
           >
             检查更新…

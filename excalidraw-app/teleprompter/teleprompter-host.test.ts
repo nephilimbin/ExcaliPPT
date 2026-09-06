@@ -71,7 +71,12 @@ describe("selectTeleprompterHost", () => {
 
     const bridge: ExcalipptDesktopBridge = {
       platform: "darwin",
-      checkForUpdates: () => {},
+      updates: {
+        check: () => {},
+        install: () => {},
+        onStatus: () => () => {},
+        status: () => Promise.resolve(null),
+      },
       teleprompter: {
         open: vi.fn(() => Promise.resolve(true)),
         close: vi.fn(),
@@ -91,7 +96,12 @@ describe("selectTeleprompterHost", () => {
   it("桌面桥 open 失败(返回 false)→ open() 返回 null", async () => {
     window.__excalipptDesktop__ = {
       platform: "win32",
-      checkForUpdates: () => {},
+      updates: {
+        check: () => {},
+        install: () => {},
+        onStatus: () => () => {},
+        status: () => Promise.resolve(null),
+      },
       teleprompter: {
         open: () => Promise.resolve(false),
         close: () => {},
@@ -108,7 +118,12 @@ describe("selectTeleprompterHost", () => {
     const off = vi.fn();
     window.__excalipptDesktop__ = {
       platform: "darwin",
-      checkForUpdates: () => {},
+      updates: {
+        check: () => {},
+        install: () => {},
+        onStatus: () => () => {},
+        status: () => Promise.resolve(null),
+      },
       teleprompter: {
         open: () => Promise.resolve(true),
         close: () => {},

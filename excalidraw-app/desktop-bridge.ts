@@ -6,12 +6,40 @@
 // (SW 注册、AI 入口、提词器宿主选择)都必须经此处的**运行时判断**,
 // 不能依赖构建时 env 缺省——web 侧若烘入了配置,桌面用的还是同一份产物。
 
+/**
+ * 更新流程状态载荷(与 desktop/src/preload.ts 的 UpdateStatus 两侧同源维护)。
+ * Win 专属:mac 走原生弹窗(半自动),不推送状态。
+ */
+export type UpdateStatus =
+  | { type: "checking" }
+  | { type: "available"; version: string }
+  | {
+      type: "downloading";
+      version: string;
+      percent: number;
+      transferred: number;
+      total: number;
+      bytesPerSecond: number;
+    }
+  | { type: "downloaded"; version: string }
+  | { type: "not-available"; currentVersion: string }
+  | { type: "error"; message: string };
+
 /** preload 暴露给渲染进程的桌面能力面。保持最小,按需增加。 */
 export interface ExcalipptDesktopBridge {
   /** 运行平台("darwin" | "win32" | …)。 */
   readonly platform: string;
-  /** 手动触发「检查更新」:Win 自动下载安装;mac 弹下载链接(半自动,未签名限制)。 */
-  checkForUpdates(): void;
+  /** 应用更新:Win 状态经 onStatus 推送(检查/下载进度/完成),下载后可一键重启安装。 */
+  readonly updates: {
+    /** 手动触发「检查更新」:Win 状态经 onStatus 推送;mac 弹下载链接(半自动)。 */
+    check(): void;
+    /** 重启并安装已下载的更新(主进程防重复守卫)。 */
+    install(): void;
+    /** 更新状态推送(下载进度等)回调;返回取消订阅函数。 */
+    onStatus(cb: (status: UpdateStatus) => void): () => void;
+    /** 拉取最近一条更新状态(晚挂载窗口补偿纯推送漏掉的终态);无则为 null。 */
+    status(): Promise<UpdateStatus | null>;
+  };
   /** 提词器原生置顶窗:由主进程开 alwaysOnTop 子窗(子窗自渲染,不走 portal)。 */
   readonly teleprompter: {
     /** 打开置顶提词窗(主进程携带主窗当前 query,子窗读到同一画布文稿)。失败返回 false。 */

@@ -24,7 +24,7 @@ import {
 } from "electron";
 import { autoUpdater } from "electron-updater";
 
-import { IPC } from "./ipc-channels";
+import { IPC, type UpdateStatus } from "./ipc-channels";
 
 const DEV_SERVER_URL = process.env.EXCALIPPT_DEV_SERVER_URL;
 /** 冒烟模式:加载成功即退出,供脚本 / CI 断言。 */
@@ -322,13 +322,22 @@ const searchOf = (url: string): string => {
   }
 };
 
-/** 向所有承载 SPA 的窗口广播子窗已关闭(多画布窗口场景按钮态一致,评审 #230)。 */
-const broadcastTeleprompterClosed = (): void => {
+/** 向所有承载 SPA 的窗口广播(已销毁窗口跳过)。 */
+const broadcastToAllWindows = (channel: string, payload?: unknown): void => {
   for (const w of BrowserWindow.getAllWindows()) {
     if (!w.isDestroyed()) {
-      w.webContents.send(IPC.teleprompterClosed);
+      if (payload === undefined) {
+        w.webContents.send(channel);
+      } else {
+        w.webContents.send(channel, payload);
+      }
     }
   }
+};
+
+/** 向所有承载 SPA 的窗口广播子窗已关闭(多画布窗口场景按钮态一致,评审 #230)。 */
+const broadcastTeleprompterClosed = (): void => {
+  broadcastToAllWindows(IPC.teleprompterClosed);
 };
 
 const closeTeleprompter = (): void => {
@@ -397,9 +406,7 @@ const openTeleprompter = async (senderWin: BrowserWindow): Promise<boolean> => {
       }
       bindTeleprompterTo(senderWin, teleprompterWin);
       void teleprompterWin
-        .loadURL(
-          buildTeleprompterUrl(searchOf(senderWin.webContents.getURL())),
-        )
+        .loadURL(buildTeleprompterUrl(searchOf(senderWin.webContents.getURL())))
         .catch(() => {});
     }
     teleprompterWin.focus();
@@ -448,6 +455,20 @@ const openTeleprompter = async (senderWin: BrowserWindow): Promise<boolean> => {
 const wireIpc = (): void => {
   // 画布主菜单「检查更新」入口(Windows 菜单栏隐藏后 UI 内可达)
   ipcMain.on(IPC.checkForUpdates, () => checkForUpdatesManually());
+  // 更新卡片「重启更新」:防重复点击窗口期 + 未下载完不可安装。
+  // 不用永久闩锁:退出被 beforeunload 否决(如录制中)时用户须能重试
+  ipcMain.on(IPC.installUpdate, () => {
+    if (!pendingDownloadedVersion) {
+      return;
+    }
+    if (Date.now() - installRequestedAt < 3000) {
+      return;
+    }
+    installRequestedAt = Date.now();
+    autoUpdater.quitAndInstall();
+  });
+  // 晚挂载窗口拉取末次状态(纯推送会漏掉已发生的终态,多画布/冷启动竞态)
+  ipcMain.handle(IPC.getUpdateStatus, () => lastBroadcastStatus);
   ipcMain.handle(IPC.teleprompterOpen, (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win) {
@@ -463,45 +484,6 @@ const wireIpc = (): void => {
 // ---------------------------------------------------------------------------
 
 const UPDATE_INTERVAL_MS = 4 * 60 * 60 * 1000;
-
-const notifyUpdateDownloaded = (): void => {
-  void dialog
-    .showMessageBox({
-      type: "info",
-      message: "新版本已下载",
-      detail: "重启应用以完成安装。",
-      buttons: ["重启更新", "稍后"],
-      defaultId: 0,
-    })
-    .then(({ response }) => {
-      if (response === 0) {
-        autoUpdater.quitAndInstall();
-      }
-    });
-};
-
-const setupAutoUpdater = (): void => {
-  if (!app.isPackaged) {
-    // 未打包时 electron-updater 全部跳过,周期检查纯属日志噪音
-    return;
-  }
-  // macOS 全自动更新需要签名(Squirrel.Mac 校验),本应用不签名 → Mac 不自动下载
-  autoUpdater.autoDownload = process.platform === "win32";
-  autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.on("update-downloaded", notifyUpdateDownloaded);
-  autoUpdater.on("error", (e) => {
-    // 尚未发布任何 release 等场景:静默,不干扰使用
-    console.warn(`[updater] ${e.message}`);
-  });
-
-  if (process.platform === "win32") {
-    const check = (): void => {
-      autoUpdater.checkForUpdates().catch(() => {});
-    };
-    check();
-    setInterval(check, UPDATE_INTERVAL_MS);
-  }
-};
 
 /**
  * 远端版本是否**高于**本地(x.y.z 数值比较;相同或更低都视为无更新——
@@ -520,7 +502,103 @@ const isRemoteNewer = (remote: string, current: string): boolean => {
   return false;
 };
 
-/** 菜单「检查更新」:Win 走自动下载;Mac 检查后给下载链接(半自动)。 */
+/**
+ * 更新流程状态载荷定义在 ipc-channels.ts(main/preload 共用);
+ * excalidraw-app/desktop-bridge.ts 保留同形副本(构建边界)。
+ */
+
+// 更新器运行态:phase 区分"下载中"(此时 error 必须前台可见),其余场景错误保持静默。
+// update-available 即置 downloading(autoDownload 随即开始下载)——首个 download-progress
+// 之前下载就已可能失败(exe 404/断网),此时 error 也必须广播而非静默吞掉。
+let updatePhase: "idle" | "downloading" = "idle";
+let lastAvailableVersion = "";
+let lastProgressStatus: Extract<UpdateStatus, { type: "downloading" }> | null =
+  null;
+// 已下载待安装的版本:缓存供「稍后」后重新唤起,并作为可安装的前置条件
+let pendingDownloadedVersion: string | null = null;
+// 最近一条广播的状态:晚挂载窗口经 getUpdateStatus 拉取补偿(纯推送会漏终态)
+let lastBroadcastStatus: UpdateStatus | null = null;
+// 防重复点击「重启更新」的窗口期;不用永久闩锁——退出可能被 beforeunload 否决,须可重试
+let installRequestedAt = 0;
+
+/** 广播更新状态并缓存末次状态(供拉取补偿)。 */
+const broadcastUpdateStatus = (status: UpdateStatus): void => {
+  lastBroadcastStatus = status;
+  broadcastToAllWindows(IPC.updateStatus, status);
+};
+// 注:通用的 broadcastToAllWindows 定义在提词器广播区,供两处共用。
+
+const setupAutoUpdater = (): void => {
+  if (!app.isPackaged) {
+    // 未打包时 electron-updater 全部跳过,周期检查纯属日志噪音
+    return;
+  }
+  // macOS 全自动更新需要签名(Squirrel.Mac 校验),本应用不签名 → Mac 不自动下载
+  autoUpdater.autoDownload = process.platform === "win32";
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on("error", (e) => {
+    if (updatePhase === "downloading") {
+      // 下载中断必须前台可见(本次改造核心),不能只写日志
+      updatePhase = "idle";
+      broadcastUpdateStatus({ type: "error", message: e.message });
+      return;
+    }
+    // 尚未发布任何 release / 后台周期检查失败等场景:静默,不干扰使用
+    console.warn(`[updater] ${e.message}`);
+  });
+
+  if (process.platform === "win32") {
+    // 进度轻节流:增量 <0.5% 且间隔 <500ms 丢弃,渲染端无需再节流
+    let lastPercent = 0;
+    let lastProgressAt = 0;
+    autoUpdater.on("update-available", (info) => {
+      // 与手动路径同一规则:本地领先线上时不能把旧版当"新版本"推荐
+      if (!isRemoteNewer(info.version, autoUpdater.currentVersion.version)) {
+        return;
+      }
+      lastAvailableVersion = info.version;
+      // autoDownload 随即开始下载:预置 phase,首个进度前的失败也走前台 error 分支
+      updatePhase = "downloading";
+      lastProgressStatus = null;
+      broadcastUpdateStatus({ type: "available", version: info.version });
+    });
+    autoUpdater.on("download-progress", (p) => {
+      const now = Date.now();
+      if (
+        now - lastProgressAt < 500 &&
+        Math.abs(p.percent - lastPercent) < 0.5
+      ) {
+        return;
+      }
+      lastPercent = p.percent;
+      lastProgressAt = now;
+      updatePhase = "downloading";
+      const status = {
+        type: "downloading" as const,
+        version: lastAvailableVersion,
+        percent: p.percent,
+        transferred: p.transferred,
+        total: p.total,
+        bytesPerSecond: p.bytesPerSecond,
+      };
+      lastProgressStatus = status;
+      broadcastUpdateStatus(status);
+    });
+    autoUpdater.on("update-downloaded", (info) => {
+      updatePhase = "idle";
+      pendingDownloadedVersion = info.version;
+      broadcastUpdateStatus({ type: "downloaded", version: info.version });
+    });
+
+    const check = (): void => {
+      autoUpdater.checkForUpdates().catch(() => {});
+    };
+    check();
+    setInterval(check, UPDATE_INTERVAL_MS);
+  }
+};
+
+/** 菜单「检查更新」:Win 走自动下载(状态经 IPC 推送到更新卡片);Mac 给下载链接(半自动)。 */
 const checkForUpdatesManually = (): void => {
   if (!app.isPackaged) {
     // electron-updater 在未打包应用中静默跳过(resolve 不抛),用户点了像没点
@@ -533,33 +611,40 @@ const checkForUpdatesManually = (): void => {
     return;
   }
   if (process.platform === "win32") {
+    // 已下载待安装:重播完成态,让用户点过「稍后」后还能唤回重启入口
+    if (pendingDownloadedVersion) {
+      broadcastUpdateStatus({
+        type: "downloaded",
+        version: pendingDownloadedVersion,
+      });
+      return;
+    }
+    // 下载进行中:重播当前进度,不重复发起检查
+    if (updatePhase === "downloading") {
+      broadcastUpdateStatus(
+        lastProgressStatus ?? {
+          type: "available",
+          version: lastAvailableVersion,
+        },
+      );
+      return;
+    }
+    broadcastUpdateStatus({ type: "checking" });
     autoUpdater
       .checkForUpdates()
-      .then(async (result) => {
+      .then((result) => {
         const remote = result?.updateInfo?.version;
         const current = autoUpdater.currentVersion.version;
-        if (remote && isRemoteNewer(remote, current)) {
-          // autoDownload 已开:此处只报"开始下载",下载完成由
-          // update-downloaded 弹窗提示重启安装
-          await dialog.showMessageBox({
-            type: "info",
-            message: `发现新版本 ${remote}(当前 ${current})`,
-            detail: "正在后台下载,完成后会提示重启安装。",
-          });
-        } else {
-          await dialog.showMessageBox({
-            type: "info",
-            message: "已是最新版本",
-            detail: `当前 ${current}`,
+        if (!(remote && isRemoteNewer(remote, current))) {
+          // 有新版时 available/downloading 已由事件监听广播,此处只兜"无新版"
+          broadcastUpdateStatus({
+            type: "not-available",
+            currentVersion: current,
           });
         }
       })
-      .catch(async (e: Error) => {
-        await dialog.showMessageBox({
-          type: "info",
-          message: "检查更新失败",
-          detail: e.message,
-        });
+      .catch((e: Error) => {
+        broadcastUpdateStatus({ type: "error", message: e.message });
       });
     return;
   }

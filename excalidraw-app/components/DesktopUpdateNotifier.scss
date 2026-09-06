@@ -1,0 +1,88 @@
+.excalidraw {
+  // 更新通知卡:右下角前台浮层(Win 更新流程专属,组件在 .excalidraw 子树内继承主题变量)
+  .desktop-update-notifier {
+    position: fixed;
+    right: calc(var(--space-factor) * 2);
+    bottom: calc(var(--space-factor) * 2);
+    z-index: calc(var(--zIndex-ui-library) + 1);
+    min-width: 240px;
+    max-width: 320px;
+    box-sizing: border-box;
+    padding: calc(var(--space-factor) * 1.5);
+    background: var(--island-bg-color);
+    border: 1px solid var(--dialog-border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-island);
+    color: var(--text-primary-color);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    // 卡片区域不拦截画布/dock 点击,仅按钮可交互(低窗口下可能与幻灯片 dock 重叠)
+    pointer-events: none;
+
+    &__btn {
+      pointer-events: auto;
+    }
+
+    &__title {
+      margin: 0;
+      font-weight: 600;
+    }
+
+    &__detail {
+      margin: calc(var(--space-factor) * 0.75) 0 0;
+      color: var(--keybinding-color);
+      font-size: 0.8rem;
+    }
+
+    &__progress {
+      height: 4px;
+      margin: calc(var(--space-factor) * 1) 0 calc(var(--space-factor) * 0.75);
+      background: var(--button-gray-2);
+      border-radius: 2px;
+      overflow: hidden;
+
+      > div {
+        height: 100%;
+        background: var(--color-primary-darker);
+        border-radius: 2px;
+        transition: width 0.2s ease-out;
+      }
+    }
+
+    &__actions {
+      display: flex;
+      gap: calc(var(--space-factor) * 1);
+      margin-top: calc(var(--space-factor) * 1.25);
+    }
+
+    &__btn {
+      padding: calc(var(--space-factor) * 0.75) calc(var(--space-factor) * 2);
+      background: var(--button-gray-1);
+      color: var(--text-primary-color);
+      border: none;
+      border-radius: var(--border-radius-lg);
+      font-size: 0.8rem;
+      cursor: pointer;
+
+      &:hover {
+        background: var(--button-gray-2);
+      }
+
+      &--primary {
+        background: var(--color-primary-darker);
+        color: var(--island-bg-color);
+
+        &:hover {
+          background: var(--color-primary-darker);
+          filter: brightness(1.1);
+        }
+
+        &:disabled {
+          cursor: default;
+          filter: none;
+          opacity: 0.7;
+        }
+      }
+    }
+  }
+}
