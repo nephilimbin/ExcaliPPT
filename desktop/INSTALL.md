@@ -1,6 +1,6 @@
 # ExcaliPPT 安装说明
 
-> 适用版本:0.1.1。安装后**完全离线可用**;联网时可获得新版本提示。
+> 适用版本:0.1.2。安装后**完全离线可用**;联网时可获得新版本提示。
 
 ## 一、系统要求与选择安装包
 
@@ -11,9 +11,9 @@
 
 | 安装包文件 | 适用系统 |
 | --- | --- |
-| `ExcaliPPT_0.1.1_Windows_x64.exe` | Windows 10 / 11(64 位) |
-| `ExcaliPPT_0.1.1_macOS_arm64.dmg` | macOS 12 (Monterey) 及以上,**Apple Silicon(M1/M2/M3/M4)** |
-| `ExcaliPPT_0.1.1_macOS_x64.dmg` | macOS 12 (Monterey) 及以上,**Intel 芯片** |
+| `ExcaliPPT_0.1.2_Windows_x64.exe` | Windows 10 / 11(64 位) |
+| `ExcaliPPT_0.1.2_macOS_arm64.dmg` | macOS 12 (Monterey) 及以上,**Apple Silicon(M1/M2/M3/M4)** |
+| `ExcaliPPT_0.1.2_macOS_x64.dmg` | macOS 12 (Monterey) 及以上,**Intel 芯片** |
 
 > 不确定 Mac 是哪种芯片:点按左上角 →「关于本机」—— 显示「芯片:Apple M…」→ 选 **arm64**;显示「处理器:Intel…」→ 选 **x64**。
 
