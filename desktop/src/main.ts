@@ -266,6 +266,11 @@ const createMainWindow = (): BrowserWindow => {
     // Windows 的应用菜单栏嵌在窗口顶部挤占画布 → 自动隐藏(Alt 唤出,快捷键不受影响);
     // macOS 菜单栏在系统屏幕顶部,无此问题
     autoHideMenuBar: process.platform === "win32",
+    // dev(未打包)时 Windows 窗口/任务栏回落 electron.exe 默认图标 → 显式指向
+    // logo;打包后 exe 内置多尺寸 ico 自动生效(mac 的图标来自 bundle,无需此项)
+    ...(process.platform === "win32" && !app.isPackaged
+      ? { icon: path.join(__dirname, "../build/icon.png") }
+      : {}),
     webPreferences: baseWebPreferences(),
   });
   wireWindowOpenHandling(win);
@@ -476,6 +481,10 @@ const notifyUpdateDownloaded = (): void => {
 };
 
 const setupAutoUpdater = (): void => {
+  if (!app.isPackaged) {
+    // 未打包时 electron-updater 全部跳过,周期检查纯属日志噪音
+    return;
+  }
   // macOS 全自动更新需要签名(Squirrel.Mac 校验),本应用不签名 → Mac 不自动下载
   autoUpdater.autoDownload = process.platform === "win32";
   autoUpdater.autoInstallOnAppQuit = true;
@@ -496,14 +505,45 @@ const setupAutoUpdater = (): void => {
 
 /** 菜单「检查更新」:Win 走自动下载;Mac 检查后给下载链接(半自动)。 */
 const checkForUpdatesManually = (): void => {
-  if (process.platform === "win32") {
-    autoUpdater.checkForUpdates().catch(async (e: Error) => {
-      await dialog.showMessageBox({
-        type: "info",
-        message: "检查更新失败",
-        detail: e.message,
-      });
+  if (!app.isPackaged) {
+    // electron-updater 在未打包应用中静默跳过(resolve 不抛),用户点了像没点
+    void dialog.showMessageBox({
+      type: "info",
+      message: "开发模式不支持检查更新",
+      detail:
+        "当前运行的是未打包的开发版,更新检查只在安装包(yarn desktop:dist:win 产物)中生效。",
     });
+    return;
+  }
+  if (process.platform === "win32") {
+    autoUpdater
+      .checkForUpdates()
+      .then(async (result) => {
+        const remote = result?.updateInfo?.version;
+        const current = autoUpdater.currentVersion.version;
+        if (remote && remote !== current) {
+          // autoDownload 已开:此处只报"开始下载",下载完成由
+          // update-downloaded 弹窗提示重启安装
+          await dialog.showMessageBox({
+            type: "info",
+            message: `发现新版本 ${remote}(当前 ${current})`,
+            detail: "正在后台下载,完成后会提示重启安装。",
+          });
+        } else {
+          await dialog.showMessageBox({
+            type: "info",
+            message: "已是最新版本",
+            detail: `当前 ${current}`,
+          });
+        }
+      })
+      .catch(async (e: Error) => {
+        await dialog.showMessageBox({
+          type: "info",
+          message: "检查更新失败",
+          detail: e.message,
+        });
+      });
     return;
   }
   autoUpdater
