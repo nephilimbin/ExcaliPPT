@@ -503,6 +503,23 @@ const setupAutoUpdater = (): void => {
   }
 };
 
+/**
+ * 远端版本是否**高于**本地(x.y.z 数值比较;相同或更低都视为无更新——
+ * 本地领先线上时不能把旧版当"新版本"推荐,评审:本地 0.1.1 / 线上 0.1.0 误报)。
+ */
+const isRemoteNewer = (remote: string, current: string): boolean => {
+  const parse = (v: string): number[] =>
+    v.split(".").map((n) => Number.parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    const r = parse(remote)[i] ?? 0;
+    const c = parse(current)[i] ?? 0;
+    if (r !== c) {
+      return r > c;
+    }
+  }
+  return false;
+};
+
 /** 菜单「检查更新」:Win 走自动下载;Mac 检查后给下载链接(半自动)。 */
 const checkForUpdatesManually = (): void => {
   if (!app.isPackaged) {
@@ -521,7 +538,7 @@ const checkForUpdatesManually = (): void => {
       .then(async (result) => {
         const remote = result?.updateInfo?.version;
         const current = autoUpdater.currentVersion.version;
-        if (remote && remote !== current) {
+        if (remote && isRemoteNewer(remote, current)) {
           // autoDownload 已开:此处只报"开始下载",下载完成由
           // update-downloaded 弹窗提示重启安装
           await dialog.showMessageBox({
@@ -551,7 +568,7 @@ const checkForUpdatesManually = (): void => {
     .then(async (result) => {
       const remote = result?.updateInfo?.version;
       const current = autoUpdater.currentVersion.version;
-      if (remote && remote !== current) {
+      if (remote && isRemoteNewer(remote, current)) {
         const { response } = await dialog.showMessageBox({
           type: "info",
           message: `发现新版本 ${remote}(当前 ${current})`,
