@@ -18,6 +18,7 @@ import {
 import { Button } from "@excalidraw/excalidraw/components/Button";
 import { IconButton } from "@excalidraw/excalidraw/components/IconButton";
 import { Island } from "@excalidraw/excalidraw/components/Island";
+import { Tooltip } from "@excalidraw/excalidraw/components/Tooltip";
 import { newElementWith, syncInvalidIndices } from "@excalidraw/element";
 
 import type {
@@ -365,6 +366,8 @@ export const SlidesPanel = () => {
       return;
     }
     if (!excalidrawAPI || !focusedFrameRef.current) {
+      // 无聚焦 slide(常见:一张幻灯片都还没有)→ toast 明确提示,不再静默无响应
+      excalidrawAPI?.setToast({ message: t("labels.slidesRecordNeedSlide") });
       return;
     }
     try {
@@ -1059,15 +1062,22 @@ export const SlidesPanel = () => {
               REC {formatElapsed(recElapsed)}
             </button>
           ) : (
-            <IconButton
-              type="icon"
-              aria-label={t("labels.slidesStartRecord")}
-              title={t("labels.slidesStartRecord")}
-              icon={RecordIcon}
-              className="slides-dock__rec-btn"
-              disabled={!supportsRec}
-              onClick={handleToggleRecord}
-            />
+            <Tooltip
+              label={
+                focusedId
+                  ? t("labels.slidesStartRecord")
+                  : t("labels.slidesRecordNeedSlide")
+              }
+            >
+              <IconButton
+                type="icon"
+                aria-label={t("labels.slidesStartRecord")}
+                icon={RecordIcon}
+                className="slides-dock__rec-btn"
+                disabled={!supportsRec}
+                onClick={handleToggleRecord}
+              />
+            </Tooltip>
           )}
           <IconButton
             type="icon"
@@ -1409,14 +1419,14 @@ export const SlidesPanel = () => {
                 dragId.current = null;
               }}
             >
-              <IconButton
-                className="slides-dock__slide-btn"
-                type="icon"
-                aria-label={slide.name ?? `Slide ${i + 1}`}
-                title={slide.name ?? `Slide ${i + 1}`}
-                icon={<span className="slides-dock__num">{i + 1}</span>}
-                onClick={() => focusFrame(slide)}
-              >
+              <Tooltip label={slide.name ?? `Slide ${i + 1}`}>
+                <IconButton
+                  className="slides-dock__slide-btn"
+                  type="icon"
+                  aria-label={slide.name ?? `Slide ${i + 1}`}
+                  icon={<span className="slides-dock__num">{i + 1}</span>}
+                  onClick={() => focusFrame(slide)}
+                >
                 <span
                   className="slides-dock__delete"
                   role="button"
@@ -1430,7 +1440,8 @@ export const SlidesPanel = () => {
                 >
                   {CloseIcon}
                 </span>
-              </IconButton>
+                </IconButton>
+              </Tooltip>
             </li>
           ))}
         </ol>

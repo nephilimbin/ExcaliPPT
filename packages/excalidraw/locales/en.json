@@ -238,6 +238,7 @@
     "slidesAnchorMarker": "Frame center (zoom anchor)",
     "slidesStartRecord": "Record",
     "slidesStopRecord": "Stop recording",
+    "slidesRecordNeedSlide": "Create a slide first to start recording",
     "slidesRecording": "Recording",
     "slidesRecCamera": "Camera",
     "slidesRecShape": "Shape",

@@ -232,6 +232,7 @@
     "slidesAnchorMarker": "frame 中心(缩放锚点)",
     "slidesStartRecord": "录制",
     "slidesStopRecord": "停止录制",
+    "slidesRecordNeedSlide": "请先创建幻灯片页,再开始录制",
     "slidesRecording": "录制",
     "slidesRecCamera": "摄像头",
     "slidesRecShape": "形状",
